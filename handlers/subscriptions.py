@@ -75,6 +75,15 @@ async def procesar_nueva_suscripcion(message: types.Message):
 
     sigla = message.text.strip().upper()
     user_id = message.from_user.id    
+    
+    datos_materia = buscar_materia_por_sigla(sigla)
+    
+    # Validamos la sigla
+    if not datos_materia:
+        # Si la lista viene vacía, la materia no existe o no tiene cupos cargados
+        await message.answer(f"❌ La sigla `{sigla}` no existe en nuestra base de datos o está mal escrita. Intenta de nuevo.")
+        return
+        
     exito = suscribir_usuario(user_id, sigla)
     
     if exito:
