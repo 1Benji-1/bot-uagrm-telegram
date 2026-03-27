@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, Header
 from aiogram import Bot, Dispatcher, types
+from typing import Optional
 
 # Importamos tu configuración y routers tal como lo haces en main.py
 from config import TELEGRAM_TOKEN
