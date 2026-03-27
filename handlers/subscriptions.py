@@ -66,14 +66,12 @@ async def pedir_materia_suscripcion(callback: types.CallbackQuery):
         reply_markup=ForceReply(selective=True)
     )
 
-@subscriptions_router.message(F.reply_to_message)
+@subscriptions_router.message(
+    F.reply_to_message, 
+    lambda message: "alertas" in message.reply_to_message.text
+)
 async def procesar_nueva_suscripcion(message: types.Message):
     """Atrapa cuando el usuario responde con la sigla a la pregunta anterior"""    
-    pregunta_original = message.reply_to_message.text
-    
-    # Verificamos si está respondiendo a la pregunta de suscripción
-    if "alertas" not in pregunta_original:
-        return
 
     sigla = message.text.strip().upper()
     user_id = message.from_user.id    

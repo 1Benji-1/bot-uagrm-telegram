@@ -5,14 +5,12 @@ from services.database import buscar_materia_por_sigla, obtener_materias_disponi
 actions_router = Router()
 
 # está respondiendo al mensaje que mandamos con el ForceReply.
-@actions_router.message(F.reply_to_message)
+@actions_router.message(
+    F.reply_to_message,
+    lambda message: "Escribe la sigla de la materia" in message.reply_to_message.text
+)
 async def procesar_busqueda_materia(message: types.Message):
     
-    # Verificamos que esté respondiendo a la pregunta correcta (por si hay más preguntas a futuro)
-    pregunta_original = message.reply_to_message.text
-    if "Escribe la sigla de la materia" not in pregunta_original:
-        return
-
     sigla = message.text.strip().upper()
     await message.answer(f"⏳ Buscando grupos para `{sigla}`...")
 
