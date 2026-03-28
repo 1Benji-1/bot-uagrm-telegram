@@ -50,42 +50,14 @@ async def recibir_alerta_supabase(request: Request, x_secreto_bot: Optional[str]
 
     # 2. Leer el paquete que manda Supabase
     datos = await request.json()
+    tipo_evento = datos.get("type")
 
-    # 3. Solo nos interesan las actualizaciones (cuando cambian los cupos)
-    if datos.get("type") == "UPDATE":
-        nuevo = datos.get("record", {})
-        viejo = datos.get("old_record", {})
+    # 🕵️‍♂️ DETECTIVE 1: ¿Supabase mandó algo que no sea un UPDATE?
+    if tipo_evento != "UPDATE":
+        return {"status": "ignorado", "razon": "No es un UPDATE", "tipo_real": tipo_evento}
 
-        cupos_nuevos = int(nuevo.get("cupos", 0))
-        cupos_viejos = int(viejo.get("cupos", 0))
+    nuevo = datos.get("record", {})
+    viejo = datos.get("old_record", {})
 
-        # 4. Lógica de negocio: ¿Aumentaron los cupos?
-        if cupos_nuevos > cupos_viejos:
-            sigla = nuevo.get("materia")
-            grupo = nuevo.get("grupo")
-            docente = nuevo.get("docente")
-
-            # 5. Buscar a quién avisarle (usando la función importada arriba)
-            usuarios_afectados = obtener_usuarios_suscritos_a(sigla)
-
-            if not usuarios_afectados:
-                return {"status": "ok", "msg": "Nadie suscrito"}
-
-            mensaje = (
-                f"🚨 <b>¡NUEVOS CUPOS EN {sigla}!</b>\n\n"
-                f"👨‍🏫 <b>Docente:</b> {docente}\n"
-                f"🏷 <b>Grupo:</b> {grupo}\n"
-                f"📉 <b>Cupos:</b> Cambió de {cupos_viejos} a <b>{cupos_nuevos}</b>"
-            )
-
-            # 6. Disparar los mensajes
-            for user_id in usuarios_afectados:
-                try:
-                    await bot.send_message(chat_id=user_id, text=mensaje)
-                except Exception as e:
-                    print(f"Error enviando a {user_id}: {e}")
-
-            return {"status": "ok", "notificados": len(usuarios_afectados)}
-
-    # Si no fue un UPDATE o los cupos no subieron, simplemente ignoramos
-    return {"status": "ignorado"}
+    # Manejo seguro por si los cupos vienen como nulos
+    cupos_nuevos = int(nuevo.get("cupos",
