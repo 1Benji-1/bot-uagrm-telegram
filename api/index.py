@@ -63,12 +63,9 @@ async def recibir_alerta_supabase(request: Request, x_secreto_bot: Optional[str]
             docente = nuevo.get("docente")
 
             # 5. Buscar a quién avisarle (usamos tu función de database.py)
-            from services.database import obtener_suscripciones_usuario # O la función que crees para buscar usuarios por sigla
-            # (Nota: Asegúrate de tener una función que te devuelva una lista de IDs de Telegram suscritos a 'sigla')
-            # usuarios_afectados = obtener_usuarios_por_sigla(sigla) 
-            
-            # Para este ejemplo, imaginemos que la función te devuelve una lista:
-            usuarios_afectados = [] # Reemplaza esto con tu consulta real a Supabase
+			from services.database import obtener_usuarios_suscritos_a
+
+			usuarios_afectados = obtener_usuarios_suscritos_a(sigla)
 
             if not usuarios_afectados:
                 return {"status": "ok", "msg": "Nadie suscrito"}

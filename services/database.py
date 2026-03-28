@@ -14,6 +14,7 @@ def buscar_materia_por_sigla(sigla: str):
         print(f"Error en BD: {e}")
         return None
 
+
 def obtener_materias_disponibles():
     """Obtiene una lista única de las materias guardadas en la base de datos."""
     try:
@@ -26,6 +27,7 @@ def obtener_materias_disponibles():
     except Exception as e:
         print(f"Error al obtener lista de materias: {e}")
         return []
+
 
 def suscribir_usuario(user_id: int, materia: str):
     """Guarda la suscripción en Supabase. Devuelve True si es nueva, False si ya existía."""
@@ -40,6 +42,7 @@ def suscribir_usuario(user_id: int, materia: str):
         print(f"El usuario ya estaba suscrito o hubo un error: {e}")
         return False
     
+    
 def obtener_suscripciones_usuario(user_id: int):
     """Obtiene la lista de materias a las que el usuario está suscrito."""
     try:
@@ -49,6 +52,20 @@ def obtener_suscripciones_usuario(user_id: int):
     except Exception as e:
         print(f"Error al obtener suscripciones: {e}")
         return []
+        
+        
+def obtener_usuarios_suscritos_a(sigla: str):
+    """Obtiene una lista con los IDs de todos los usuarios suscritos a una materia específica."""
+    try:
+        # Buscamos en la tabla 'suscripciones' todos los registros que coincidan con la sigla
+        respuesta = supabase.table("suscripciones").select("user_id").eq("materia", sigla).execute()
+        
+        # Extraemos solo los IDs de los usuarios y los devolvemos como una lista plana
+        return [fila["user_id"] for fila in respuesta.data]
+    except Exception as e:
+        print(f"Error al obtener usuarios suscritos a {sigla}: {e}")
+        return []
+
 
 def eliminar_suscripcion(user_id: int, materia: str):
     """Elimina una suscripción específica del usuario."""
