@@ -1,7 +1,7 @@
 from aiogram import Router, F, types
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
-from services.database import obtener_suscripciones_usuario, eliminar_suscripcion, suscribir_usuario
+from services.database import obtener_suscripciones_usuario, eliminar_suscripcion, suscribir_usuario, buscar_materia_por_sigla
 
 subscriptions_router = Router()
 
