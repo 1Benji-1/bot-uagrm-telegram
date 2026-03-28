@@ -9,21 +9,16 @@ from handlers.actions import actions_router
 from handlers.subscriptions import subscriptions_router
 from services.database import obtener_usuarios_suscritos_a
 
-# 🛡️ CHALECO ANTIBALAS PARA VERCEL: 
-# Si Vercel no lee el token durante el "build", le pasamos uno falso para que no explote.
-# En producción (cuando corra de verdad), usará tu token real.
+# 🛡️ CHALECO ANTIBALAS PARA VERCEL
 token_seguro = TELEGRAM_TOKEN if TELEGRAM_TOKEN else "123456:token_falso_para_engañar_a_vercel"
 
-# Inicializamos el bot y el despachador con el token seguro
 bot = Bot(token=token_seguro)
 dp = Dispatcher()
 
-# Conectamos tus módulos
 dp.include_router(menu_router)
 dp.include_router(subscriptions_router) 
 dp.include_router(actions_router)
 
-# Inicializamos la aplicación de FastAPI
 app = FastAPI()
 
 @app.post("/api/webhook")
@@ -42,9 +37,8 @@ async def recibir_alerta_supabase(request: Request, x_secreto_bot: Optional[str]
     datos = await request.json()
     tipo_evento = datos.get("type")
 
-    # DETECTIVE 1: ¿Supabase mandó algo que no sea un UPDATE?
     if tipo_evento != "UPDATE":
-        return {"status": "ignorado", "razon": "No es un UPDATE", "tipo_real": tipo_evento}
+        return {"status": "ignorado", "razon": "No es un UPDATE"}
 
     nuevo = datos.get("record", {})
     viejo = datos.get("old_record", {})
@@ -52,31 +46,33 @@ async def recibir_alerta_supabase(request: Request, x_secreto_bot: Optional[str]
     cupos_nuevos = int(nuevo.get("cupos", 0) if nuevo.get("cupos") is not None else 0)
     cupos_viejos = int(viejo.get("cupos", 0) if viejo.get("cupos") is not None else 0)
 
-    # DETECTIVE 2: ¿Los cupos bajaron o se mantuvieron igual en vez de subir?
     if cupos_nuevos <= cupos_viejos:
-        return {
-            "status": "ignorado", 
-            "razon": "Cupos no subieron", 
-            "nuevos": cupos_nuevos, 
-            "viejos": cupos_viejos
-        }
+        return {"status": "ignorado", "razon": "Cupos no subieron"}
 
-    sigla = nuevo.get("materia")
-    grupo = nuevo.get("grupo")
-    docente = nuevo.get("docente")
+    # Extraemos los datos completos
+    materia_completa = nuevo.get("materia", "")
+    grupo = nuevo.get("grupo", "")
+    docente = nuevo.get("docente", "")
 
-    usuarios_afectados = obtener_usuarios_suscritos_a(sigla)
+    # ✂️ LA MAGIA ESTÁ AQUÍ: Cortamos "INF310-ESTRUCTURA..." y nos quedamos con "INF310"
+    # Usamos strip() por si acaso hay un espacio escondido
+    sigla_corta = materia_completa.split("-")[0].strip()
 
-    # DETECTIVE 3: ¿Buscó en la base de datos y nadie estaba suscrito a esa materia?
+    # Buscamos usando solo la sigla corta
+    usuarios_afectados = obtener_usuarios_suscritos_a(sigla_corta)
+
     if not usuarios_afectados:
         return {
             "status": "ignorado", 
             "razon": "Nadie suscrito", 
-            "materia_buscada": sigla
+            "materia_buscada": sigla_corta,
+            "original": materia_completa
         }
 
+    # Armamos el mensaje final
     mensaje = (
-        f"🚨 <b>¡NUEVOS CUPOS EN {sigla}!</b>\n\n"
+        f"🚨 <b>¡NUEVOS CUPOS DISPONIBLES!</b>\n\n"
+        f"📚 <b>Materia:</b> {materia_completa}\n"
         f"👨‍🏫 <b>Docente:</b> {docente}\n"
         f"🏷 <b>Grupo:</b> {grupo}\n"
         f"📉 <b>Cupos:</b> Cambió de {cupos_viejos} a <b>{cupos_nuevos}</b>"
@@ -92,11 +88,10 @@ async def recibir_alerta_supabase(request: Request, x_secreto_bot: Optional[str]
             print(f"Error enviando a {user_id}: {e}")
             errores += 1
 
-    # DETECTIVE 4: ¡Todo salió perfecto!
     return {
         "status": "ok", 
         "mensaje": "Notificaciones enviadas", 
         "exitos": exitos, 
         "errores": errores,
-        "materia": sigla
+        "sigla": sigla_corta
     }
