@@ -8,6 +8,9 @@ from handlers.menu import menu_router
 from handlers.actions import actions_router
 from handlers.subscriptions import subscriptions_router
 
+# Importamos la función de la base de datos AQUÍ ARRIBA
+from services.database import obtener_usuarios_suscritos_a
+
 # Inicializamos el bot y el despachador
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
@@ -34,7 +37,7 @@ async def telegram_webhook(request: Request):
     await dp.feed_update(bot, update)
     return {"status": "ok"}
     
-    
+
 @app.post("/api/webhook_supabase")
 async def recibir_alerta_supabase(request: Request, x_secreto_bot: Optional[str] = Header(None)):
     """
@@ -62,10 +65,8 @@ async def recibir_alerta_supabase(request: Request, x_secreto_bot: Optional[str]
             grupo = nuevo.get("grupo")
             docente = nuevo.get("docente")
 
-            # 5. Buscar a quién avisarle (usamos tu función de database.py)
-			from services.database import obtener_usuarios_suscritos_a
-
-			usuarios_afectados = obtener_usuarios_suscritos_a(sigla)
+            # 5. Buscar a quién avisarle (usando la función importada arriba)
+            usuarios_afectados = obtener_usuarios_suscritos_a(sigla)
 
             if not usuarios_afectados:
                 return {"status": "ok", "msg": "Nadie suscrito"}

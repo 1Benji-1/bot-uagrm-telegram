@@ -1,4 +1,5 @@
-aiogram
 fastapi
-python-dotenv
+aiogram
 supabase
+python-dotenv
+pydantic
